@@ -1,0 +1,164 @@
+<html>
+  <head>
+    <title>KPP Lab 1</title>
+    <style>
+      html, body, #map {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .nasa {
+        max-width: 60px;
+        max-height: 50px;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+	  var baseSourceNASA = 'https://api.nasa.gov/planetary/earth/imagery?';
+      var baseSource = 'https://api.openweathermap.org/data/2.5/weather?APIKEY=1b5ee5a1a74d624a74750350327ea372';
+      var points = [{
+        title: 'Vinnytsia',
+        position: {
+          lat: 49.233333,
+          lng: 28.483333
+        }
+      }, {
+        title: 'Lviv',
+        position: {
+          lat: 49.83,
+          lng: 24.014167
+        }
+      }, {
+        title: 'Kharkiv',
+        position: {
+          lat: 50.004444,
+          lng: 36.231389
+        }
+      }, {
+        title: 'Kyiv',
+        position: {
+          lat: 50.45,
+          lng: 30.523333
+        }
+      }, {
+        title: 'Odesa',
+        position: {
+          lat: 46.485722,
+          lng: 30.743444
+        }
+      }];
+      var markers = [];
+      var map;
+      var icon;
+      var text;
+      var contentString = '<div id="content"><img class="nasa" src="'+ text +'"/></div>';
+      var infowindow;
+      function initMap() {
+      	
+  		infowindow = new google.maps.InfoWindow({
+  		content: contentString
+  		});
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 48.7195052, lng: 30.2470346},
+          zoom: 7
+        });
+
+        
+        google.maps.event.addListener(map, "rightclick", function(event) {
+          var lat = event.latLng.lat();
+          var lng = event.latLng.lng();
+          var elem = {
+            title: points.length + 1,
+            position: {
+              lat: lat,
+              lng: lng
+            }
+          };
+          points.push(elem);
+          addMarker(elem, 500);
+		      loadNasaMarker(elem, 200);
+        });
+        SetMarker();
+      }
+
+	  var dataNasa;
+
+	  function loadNasaMarker(point, timeout) {
+		var url = baseSourceNASA + '&lat=' + point.position.lat + '&lon=' + point.position.lng + '&date=2014-02-01' + '&cloud_score=False' + '&api_key=PqeejiU6MLnm1d3LnbC95pxcWbjPIReyfyqeAVyf';
+        fetch(url)
+          .then(function(response) {
+            return response.json();
+          })
+          .then(function(data) {
+            var num = markers.length-1;
+          	addNasaMarker(data.url, timeout, point, num);
+          });
+      }
+
+      function addNasaMarker(url, timeout, point, num) {
+	      window.setTimeout(function() {
+	        /*var marker =  new google.maps.Marker({
+	          position: point.position,
+	          map: map,
+	          title: 'image',
+	          icon: url
+	        });*/
+	        google.maps.event.addListener(markers[num], 'click', function() {
+            text = url;
+            contentString = '<div id="content"><img class="nasa" src="'+ text +'"/></div>';
+            infowindow = new google.maps.InfoWindow({
+            content: contentString
+            });
+				    infowindow.open(map,markers[num]);
+			});
+	        //markers.push(marker);
+
+	      }, timeout);
+	      
+	      var markerCluster = new MarkerClusterer(map, markers,
+	        {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+
+      }
+	  
+      function addMarker(point, timeout) {
+        var url = baseSource + '&lat=' + point.position.lat + '&lon=' + point.position.lng;
+        fetch(url)
+          .then(function(response) {
+            return response.json();
+          })
+          .then(function(data) {
+            if (data && data.weather && data.weather.length > 0) {
+              window.setTimeout(function() {
+                var weather = data.weather[0];
+                var icon = 'https://openweathermap.org/img/w/' + weather.icon + '.png';
+                markers.push(new google.maps.Marker({
+                  position: point.position,
+                  map: map,
+                  title: weather.description,
+                  icon: icon
+                }));
+              }, timeout);
+                var markerCluster = new MarkerClusterer(map, markers,
+                {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+            }
+          });
+      }
+
+      //https://api.nasa.gov/planetary/apod? api_key = PqeejiU6MLnm1d3LnbC95pxcWbjPIReyfyqeAVyf
+
+      function SetMarker() {
+        for (var i = 0; i < points.length; ++i) {
+          addMarker(points[i], i * 500);
+        }
+      }
+
+
+    </script>
+    <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLFy-QALEmBPzIJMsWynAcdRUqB7VtXU4&callback=initMap" async defer></script>
+  </body>
+</html>
